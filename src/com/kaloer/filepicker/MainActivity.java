@@ -17,16 +17,10 @@
 package com.kaloer.filepicker;
 
 import java.io.File;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-
-import com.kaloer.filepicker.R;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -38,6 +32,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	
 	private TextView mFilePathTextView;
 	private Button mStartActivityButton;
+	private Button mStartSaveActivityButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,31 +42,62 @@ public class MainActivity extends Activity implements OnClickListener {
         // Set the views
         mFilePathTextView = (TextView)findViewById(R.id.file_path_text_view);
         mStartActivityButton = (Button)findViewById(R.id.start_file_picker_button);
+        mStartSaveActivityButton = (Button)findViewById(R.id.start_file_save_button);
         
         mStartActivityButton.setOnClickListener(this);
+        mStartSaveActivityButton.setOnClickListener(this);
     }
 
 	@Override
 	public void onClick(View v) {
-		switch(v.getId()) {
-		case R.id.start_file_picker_button:
+		switch (v.getId()) {
+		case R.id.start_file_picker_button: {
 			// Create a new Intent for the file picker activity
 			Intent intent = new Intent(this, FilePickerActivity.class);
-			
+
 			// Set the initial directory to be the sdcard
-			//intent.putExtra(FilePickerActivity.EXTRA_FILE_PATH, Environment.getExternalStorageDirectory());
-			
+			// intent.putExtra(FilePickerActivity.EXTRA_FILE_PATH,
+			// Environment.getExternalStorageDirectory());
+
 			// Show hidden files
-			//intent.putExtra(FilePickerActivity.EXTRA_SHOW_HIDDEN_FILES, true);
-			
+			// intent.putExtra(FilePickerActivity.EXTRA_SHOW_HIDDEN_FILES,
+			// true);
+
 			// Only make .png files visible
-			//ArrayList<String> extensions = new ArrayList<String>();
-			//extensions.add(".png");
-			//intent.putExtra(FilePickerActivity.EXTRA_ACCEPTED_FILE_EXTENSIONS, extensions);
-			
+			// ArrayList<String> extensions = new ArrayList<String>();
+			// extensions.add(".png");
+			// intent.putExtra(FilePickerActivity.EXTRA_ACCEPTED_FILE_EXTENSIONS,
+			// extensions);
+
 			// Start the activity
 			startActivityForResult(intent, REQUEST_PICK_FILE);
 			break;
+		}
+		case R.id.start_file_save_button: {
+			// Create a new Intent for the file picker activity
+			Intent intent = new Intent(this, FilePickerActivity.class);
+			
+			// Use file save mode, where the user can input a filename
+			intent.putExtra(FilePickerActivity.EXTRA_SAVE_FILE, true);
+
+			// Set the initial directory to be the sdcard
+			// intent.putExtra(FilePickerActivity.EXTRA_FILE_PATH,
+			// Environment.getExternalStorageDirectory());
+
+			// Show hidden files
+			// intent.putExtra(FilePickerActivity.EXTRA_SHOW_HIDDEN_FILES,
+			// true);
+
+			// Only make .png files visible
+			// ArrayList<String> extensions = new ArrayList<String>();
+			// extensions.add(".png");
+			// intent.putExtra(FilePickerActivity.EXTRA_ACCEPTED_FILE_EXTENSIONS,
+			// extensions);
+
+			// Start the activity
+			startActivityForResult(intent, REQUEST_PICK_FILE);
+			break;
+		}
 		}
 	}
 	

@@ -26,6 +26,11 @@
     	android:id="@+id/start_file_picker_button"
     	android:text="Start file picker"
     	/>
+		<Button
+			android:layout_height="wrap_content"
+			android:text="Start file save picker"
+			android:layout_width="fill_parent"
+			android:id="@+id/start_file_save_button"/>
     <TextView
     	android:layout_width="fill_parent"
     	android:layout_height="wrap_content"

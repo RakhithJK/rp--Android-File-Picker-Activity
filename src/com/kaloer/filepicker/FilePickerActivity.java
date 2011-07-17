@@ -29,6 +29,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -136,15 +137,17 @@ public class FilePickerActivity extends ListActivity {
 	}
 	
 	@Override
-	public void onBackPressed() {
-		if(mDirectory.getParentFile() != null) {
-			// Go to parent directory
-			mDirectory = mDirectory.getParentFile();
-			refreshFilesList();
-			return;
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+			if (mDirectory.getParentFile() != null) {
+				// Go to parent directory
+				mDirectory = mDirectory.getParentFile();
+				refreshFilesList();
+			}
+			return true;
 		}
-		
-		super.onBackPressed();
+
+		return super.onKeyDown(keyCode, event);
 	}
 	
 	@Override

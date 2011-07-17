@@ -1,0 +1,12 @@
+<project name="android-filepicker" default="jar" basedir=".">
+  <description>A file picker for android</description>
+  <!-- set global properties for this build -->
+  <property name="src" location="src" />
+  <property name="bin" location="bin" />
+
+  <target name="jar">
+    <jar destfile="android-filepicker.jar" basedir="bin/">
+      <include name="com/**" />
+    </jar>
+  </target>
+</project>

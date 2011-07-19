@@ -5,8 +5,6 @@
   <property name="bin" location="bin" />
 
   <target name="jar">
-    <jar destfile="android-filepicker.jar" basedir="bin/">
-      <include name="com/**" />
-    </jar>
+	  <jar destfile="android-filepicker.jar" basedir="bin/" includes="com/**" excludes="**/R*.class **/MainActivity.class" />
   </target>
 </project>

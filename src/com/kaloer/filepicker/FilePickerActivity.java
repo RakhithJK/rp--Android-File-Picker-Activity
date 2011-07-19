@@ -27,18 +27,20 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -82,17 +84,16 @@ public class FilePickerActivity extends Activity {
 	protected boolean mShowHiddenFiles = false;
 	protected String[] acceptedFileExtensions;
 
+	protected TextView mTVEmptyView;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.file_picker_view);
-
-		// Main linear layout
-		mLinearLayout = (LinearLayout) findViewById(R.id.file_picker_layout);
+		// Create the main layout
+		createView();
 
 		// Cancel button
-		mButCancel = (Button) findViewById(R.id.butCancel);
 		mButCancel.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				setResult(RESULT_CANCELED);
@@ -101,15 +102,12 @@ public class FilePickerActivity extends Activity {
 		});
 
 		// Set the view to be shown if the list is empty
-		mFileList = (ListView) findViewById(R.id.lvFilePicker);
-		LayoutInflater inflator = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		View emptyView = inflator
-				.inflate(R.layout.file_picker_empty_view, null);
-		mFileList.setEmptyView(emptyView);
+		mTVEmptyView = new TextView(this);
+		mTVEmptyView.setText("No Files or Folder");
+		mFileList.setEmptyView(mTVEmptyView);
 
+		// set onclick listener
 		mFileList.setOnItemClickListener(new FilePickListClickListener());
-
-		mTVCurrentFolder = (TextView) findViewById(R.id.tvCurrentFolder);
 
 		// Set initial directory
 		mDirectory = new File(DEFAULT_INITIAL_DIRECTORY);
@@ -139,7 +137,34 @@ public class FilePickerActivity extends Activity {
 			acceptedFileExtensions = (String[]) collection
 					.toArray(new String[collection.size()]);
 		}
+	}
 
+	protected void createView() {
+
+		mLinearLayout = new LinearLayout(this);
+		mLinearLayout.setOrientation(LinearLayout.VERTICAL);
+		mLinearLayout.setLayoutParams(new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.FILL_PARENT,
+				LinearLayout.LayoutParams.FILL_PARENT));
+
+		// current folder textview
+		mTVCurrentFolder = new TextView(this);
+		mTVCurrentFolder.setTextAppearance(this,
+				android.R.attr.textAppearanceSmall);
+		mTVCurrentFolder.setLayoutParams(new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.FILL_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT));
+		mLinearLayout.addView(mTVCurrentFolder);
+
+		// cancel button
+		mButCancel = new Button(this);
+		mButCancel.setLayoutParams(new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.FILL_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT));
+		mButCancel.setText(android.R.string.cancel);
+		mLinearLayout.addView(mButCancel);
+
+		// save filename edit and ok button
 		if (getIntent().hasExtra(EXTRA_SAVE_FILE)) {
 			Button butOk = new Button(this);
 			butOk.setId(666);
@@ -156,10 +181,10 @@ public class FilePickerActivity extends Activity {
 				@Override
 				public void onClick(View v) {
 					Intent extra = new Intent();
-					String sFileName = mEditFileName.getText().toString().trim();
-					if(mEditFileName.length() > 0) {
-						extra.putExtra(
-								EXTRA_FILE_PATH,
+					String sFileName = mEditFileName.getText().toString()
+							.trim();
+					if (mEditFileName.length() > 0) {
+						extra.putExtra(EXTRA_FILE_PATH,
 								mDirectory.getAbsolutePath() + "/" + sFileName);
 						setResult(RESULT_OK, extra);
 						finish();
@@ -174,6 +199,15 @@ public class FilePickerActivity extends Activity {
 
 			mLinearLayout.addView(layoutFilename, 2);
 		}
+
+		// the file list view
+		mFileList = new ListView(this);
+		mFileList.setLayoutParams(new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.FILL_PARENT,
+				LinearLayout.LayoutParams.FILL_PARENT));
+		mLinearLayout.addView(mFileList);
+
+		this.setContentView(mLinearLayout);
 	}
 
 	@Override
@@ -248,14 +282,30 @@ public class FilePickerActivity extends Activity {
 		}
 	}
 
-	private class FilePickerListAdapter extends ArrayAdapter<File> {
+	/**
+	 * Converts the given dp to pixels.
+	 * 
+	 * @param dp
+	 *            unit to convert.
+	 * @return Pixels for the given dp.
+	 */
+	private int getDP(float dp) {
+		DisplayMetrics metrics = getBaseContext().getResources()
+				.getDisplayMetrics();
+		return (int) (metrics.density * dp + 0.5f);
+	}
+
+	private class FilePickerListAdapter extends BaseAdapter {
 
 		private List<File> mObjects;
+		private Context mContext;
+
+		private final static int IMAGEVIEW_ID = 1;
+		private final static int TEXTVIEW_ID = 2;
 
 		public FilePickerListAdapter(Context context, List<File> objects) {
-			super(context, R.layout.file_picker_list_item, android.R.id.text1,
-					objects);
 			mObjects = objects;
+			mContext = context;
 		}
 
 		@Override
@@ -264,22 +314,42 @@ public class FilePickerActivity extends Activity {
 			View row = null;
 
 			if (convertView == null) {
-				LayoutInflater inflater = (LayoutInflater) getContext()
-						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				row = inflater.inflate(R.layout.file_picker_list_item, parent,
-						false);
-			} else {
-				row = convertView;
+				// create the listview item [image] filename
+				LinearLayout ll = new LinearLayout(mContext);
+				ll.setOrientation(LinearLayout.HORIZONTAL);
+
+				ImageView imgView = new ImageView(mContext);
+				int dp40 = getDP(40);
+				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+						dp40, dp40);
+				int dp5 = getDP(5);
+				lp.setMargins(dp5, dp5, dp5, dp5);
+				imgView.setLayoutParams(lp);
+				imgView.setScaleType(ScaleType.CENTER_CROP);
+				imgView.setId(IMAGEVIEW_ID);
+				ll.addView(imgView);
+
+				TextView tv = new TextView(mContext);
+				tv.setTextSize(18);
+				lp = new LinearLayout.LayoutParams(
+						LinearLayout.LayoutParams.FILL_PARENT,
+						LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+				lp.gravity = Gravity.CENTER_VERTICAL | Gravity.LEFT;
+				int dp3 = getDP(3);
+				lp.setMargins(getDP(10), dp3, dp3, dp3);
+				tv.setLayoutParams(lp);
+				tv.setSingleLine(true);
+				tv.setId(TEXTVIEW_ID);
+				ll.addView(tv);
+
+				convertView = ll;
 			}
+			row = convertView;
 
 			File object = mObjects.get(position);
 
-			ImageView imageView = (ImageView) row
-					.findViewById(R.id.file_picker_image);
-			TextView textView = (TextView) row
-					.findViewById(R.id.file_picker_text);
-			// Set single line
-			textView.setSingleLine(true);
+			ImageView imageView = (ImageView) row.findViewById(IMAGEVIEW_ID);
+			TextView textView = (TextView) row.findViewById(TEXTVIEW_ID);
 
 			textView.setText(object.getName());
 			if (object.isFile()) {
@@ -291,6 +361,21 @@ public class FilePickerActivity extends Activity {
 			}
 
 			return row;
+		}
+
+		@Override
+		public int getCount() {
+			return mObjects.size();
+		}
+
+		@Override
+		public Object getItem(int index) {
+			return mObjects.get(index);
+		}
+
+		@Override
+		public long getItemId(int index) {
+			return index;
 		}
 
 	}
